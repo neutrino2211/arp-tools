@@ -1,5 +1,6 @@
 #!/usr/bin/perl 
 
+use feature "say";
 use strict;
 use warnings;
 use Async;
@@ -10,8 +11,13 @@ use NetPacket::Ethernet;
 use NetPacket::IP;
 use NetPacket::TCP;
 use NetPacket::ARP;
+use Path::Tiny;
 
 my $err;
+my %attackers;
+my $limit = 10;
+
+our $time = time + 30;
 my $type = 'DLT_IEEE802_11';
 my $dev  = find_device($ARGV[0]);
 my ( $addr, $net, $mask );
@@ -26,32 +32,63 @@ Net::Pcap::set_datalink( $WiFiobject, $w802 );
 unless ( defined $WiFiobject ) {
     die 'Unable to create packet capture on device ', $dev, ' - ', $err;
 }
+mac_parse("ooppoopp");
 die 'Unable to perform packet capture'
   unless Net::Pcap::loop( $WiFiobject, -1, \&syn_packets, '' );
 print Dumper ($WiFiobject);
-
 Net::Pcap::close($WiFiobject);
 
-my %attackers;
-my $limit = 10;
+sub oui {
+    my $device_manufacturer = "Unknown manufacturer";
+    my $oui_file = path('./')->child('OUI.list');
+    my $macA = $_[0];
+    my $mac = $macA =~ s/:/ /r =~ s/:/ /r;
+    my $oui_info = $oui_file->openr_utf8();
+    while(my $info = $oui_info->getline()){
+        my $parse = substr $info,0,8;
+        my $compare = $parse;
+        if(uc($compare) eq uc($mac)){
+            $device_manufacturer = "Manufacturer: ".(substr $info,9,-1);
+        }
+    }
+    return $device_manufacturer;
+}
+
+sub mac_parse {
+    my @str_list = split //,$_[0];
+    my $index = 0;
+    my $str = "";
+    foreach my $char (@str_list) {
+        if($index % 2 == 0 && $index > 0){
+            $str .= ":";
+        }
+        $str .= $char;
+        $index += 1
+    }
+    return $str;
+}
 
 sub syn_packets {
     my ( $user_data, $header, $packet ) = @_;
     my $eth_obj = NetPacket::Ethernet->decode($packet);
-    # print "$eth_obj->{'src_mac'},  $eth_obj->{'dest_mac'}\n";
     my $eth_type = $eth_obj->{'type'};
     my $arp_obj = NetPacket::ARP->decode($eth_obj->{data}, $eth_obj);
     my $source_addr = $arp_obj->{'sha'};
     my $dest_addr = $arp_obj->{'tha'};
 
     my $src_mac = $eth_obj->{'src_mac'};
-    print "x=$eth_type dest=$dest_addr src=$src_mac\n";
+    #Uncomment following lines for increased verbosity
+    # print "x=$eth_type dest=$dest_addr src=$src_mac\n";
     # print("source hw addr=" . $source_addr . ", " . "dest hw addr=" . $dest_addr . "\n");
     if($dest_addr eq $ARGV[1]){
-        # print("Strange packet sent to Gateway by $eth_obj->{'src_mac'} (Attacker)\n");
         if( exists $attackers{$src_mac}){
-            if($attackers{$src_mac} eq 10){
-                print("Attacker identified ($src_mac)\n")
+            if(time ge $time){
+                $attackers{$src_mac} = 0;
+                $time = time + 30;
+            } elsif($attackers{$src_mac} eq 10){
+                my $parsed_mac = mac_parse($src_mac);
+                my $man = oui($parsed_mac);
+                print("Attacker identified ($parsed_mac) [$man]\n")
             } else {
                 $attackers{$src_mac} += 1;
             }
