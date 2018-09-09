@@ -80,8 +80,8 @@ sub syn_packets {
     my $eth_obj = NetPacket::Ethernet->decode($packet);
     my $eth_type = $eth_obj->{'type'};
     my $arp_obj = NetPacket::ARP->decode($eth_obj->{data}, $eth_obj);
-    my $source_addr = $arp_obj->{'spa'};
-    my $dest_addr = $arp_obj->{'tpa'};
+    my $source_addr = $arp_obj->{'sha'};
+    my $dest_addr = $arp_obj->{'tha'};
 
     my $src_mac = $eth_obj->{'src_mac'};
     print "x=$eth_type dest=$dest_addr src=$src_mac\n" if exists $opts{'v'} || exists $opts{'V'};
