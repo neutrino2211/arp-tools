@@ -43,7 +43,7 @@ if(exists $opts{'p'}){
 }
 my $target = "ff:ff:ff:ff:ff:ff";
 if(exists $opts{'m'}){
-  $target = $ARGV[0];
+  $target = $opts{'m'};
 }
 my $poison;
 my $network_device_name = Net::Pcap::pcap_lookupdev(\my $error_msg);
@@ -74,10 +74,6 @@ for my $ip_address (Net::Netmask->new($device->subnet)->enumerate)
     $target, # broadcast
     "request",
   );
-  if($!){
-    say $!;
-    exit();
-  }
   if(exists $opts{'p'} ){
     $poison = 1;
     my $i = 1;

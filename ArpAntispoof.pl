@@ -95,7 +95,8 @@ sub syn_packets {
                 $time = time + 30;
             } elsif($attackers{$src_mac} eq 10){
                 my $parsed_mac = mac_parse($src_mac);
-                my $man = oui($parsed_mac);
+                my $substr = substr $parsed_mac,0,8;
+                my $man = oui($substr);
                 print("Attacker identified ($parsed_mac) [$man]\n")
             } else {
                 $attackers{$src_mac} += 1;
@@ -134,7 +135,7 @@ sub usage {
         "\n\t-i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces".
         "\n\t-c : Mac address of device to protect without ':' e.g 909090909090".
         "\n\t-v : Show packet metadata".
-        "\n\t-V : Show packet metadata and data with optional filter";
+        "\n\t-V : Show packet metadata and data with optional filter\n";
 }
 
 intro("blue");
