@@ -3,7 +3,7 @@
 use feature "say";
 use strict;
 use warnings;
-use Async;
+use Proc::Forkfunc;
 use Data::Dumper;
 use Net::Pcap;
 use Net::Pcap::FindDevice;
@@ -12,31 +12,13 @@ use NetPacket::IP;
 use NetPacket::TCP;
 use NetPacket::ARP;
 use Path::Tiny;
+use IO::Socket;
+use IO::Interface;
 
-my $err;
-my %attackers;
-my $limit = 10;
-
+our $err;
+our %attackers;
 our $time = time + 30;
-my $type = 'DLT_IEEE802_11';
-my $dev  = find_device($ARGV[0]);
-my ( $addr, $net, $mask );
-if ( Net::Pcap::lookupnet( $dev, \$net, \$mask, \$err ) ) {
-    die "Unable to look up device information for ", $dev, " - ", $err;
-}
-print STDOUT "${dev}: mask -> $mask\n";
-
-my $WiFiobject = Net::Pcap::open_live( $dev, 128000, -1, 500, \$err );
-my $w802 = Net::Pcap::datalink_name_to_val($type);
-Net::Pcap::set_datalink( $WiFiobject, $w802 );
-unless ( defined $WiFiobject ) {
-    die 'Unable to create packet capture on device ', $dev, ' - ', $err;
-}
-mac_parse("ooppoopp");
-die 'Unable to perform packet capture'
-  unless Net::Pcap::loop( $WiFiobject, -1, \&syn_packets, '' );
-print Dumper ($WiFiobject);
-Net::Pcap::close($WiFiobject);
+our $sock = IO::Socket::INET->new( 'Proto' => 'tcp' );
 
 sub oui {
     my $device_manufacturer = "Unknown manufacturer";
@@ -96,4 +78,40 @@ sub syn_packets {
             $attackers{$src_mac} = 1;
         }
     }
+}
+
+sub start_on_iface {
+    my $limit = 10;
+    my $type = 'DLT_IEEE802_11';
+    my $dev  = find_device($_[0]);
+    my ( $addr, $net, $mask );
+    if ( Net::Pcap::lookupnet( $dev, \$net, \$mask, \$err ) ) {
+        die "Unable to look up device information for ", $dev, " - ", $err;
+    }
+    print STDOUT "${dev}: mask -> $mask\n";
+
+    my $WiFiobject = Net::Pcap::open_live( $dev, 128000, -1, 500, \$err );
+    my $w802 = Net::Pcap::datalink_name_to_val($type);
+    Net::Pcap::set_datalink( $WiFiobject, $w802 );
+    unless ( defined $WiFiobject ) {
+        die 'Unable to create packet capture on device ', $dev, ' - ', $err;
+    }
+
+    die 'Unable to perform packet capture'
+    unless Net::Pcap::loop( $WiFiobject, -1, \&syn_packets, '' );
+    print Dumper ($WiFiobject);
+    Net::Pcap::close($WiFiobject);
+}
+
+if ($ARGV[0] eq "all"){
+    foreach my $iface ( $sock->if_list ) {
+        if($iface ne "lo"){
+            # Async->new(\&start_on_iface($iface));
+            $|++;
+            forkfunc(\&start_on_iface,$iface);
+        }
+    }
+    sleep();
+} else {
+    start_on_iface($ARGV[0]);
 }
