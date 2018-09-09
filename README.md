@@ -1,7 +1,7 @@
 # arp-tools
 
 ## ArpAntispoof.pl
-Now works to detect [http://github.com/bettercap/bettercap](bettercap)
+Now works to detect [bettercap](http://github.com/bettercap/bettercap)
 ### Usage
 
 ```bash
