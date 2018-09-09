@@ -30,7 +30,7 @@ sub intro{
   print color($_[0],'bold'),"\t\t\t***Neutrino2211****************\n";
   print color($_[0],'bold'),"\t\t\t*****Information Gathering*****\n";
   print color($_[0],'bold'),"\t\t\t*******************************\n";
-  print "\n\n\n\n\n\n";
+  print "\n\n\n";
   say "\t\t\tArp tools by neutrino2211\n\n\n";
 }
 use LWP;

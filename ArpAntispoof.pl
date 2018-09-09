@@ -6,6 +6,7 @@ use warnings;
 use Proc::Forkfunc;
 use Data::Dumper;
 use Net::Pcap;
+use Term::ANSIColor;
 use Net::Pcap::FindDevice;
 use NetPacket::Ethernet;
 use NetPacket::IP;
@@ -14,11 +15,35 @@ use NetPacket::ARP;
 use Path::Tiny;
 use IO::Socket;
 use IO::Interface;
+use Getopt::Std;
 
+our %opts;
 our $err;
 our %attackers;
 our $time = time + 30;
 our $sock = IO::Socket::INET->new( 'Proto' => 'tcp' );
+
+getopts("i:c:h:v:V",\%opts);
+
+sub intro{
+    print color($_[0],'bold'),"\t\t\t*******************************\n";
+    print color($_[0],'bold'),"\t\t\t*************0000**************\n";
+    print color($_[0],'bold'),"\t\t\t***********00    00************\n";
+    print color($_[0],'bold'),"\t\t\t*********000000000000**********\n";
+    print color($_[0],'bold'),"\t\t\t*******00            00********\n";
+    print color($_[0],'bold'),"\t\t\t*******************************\n";
+    print color($_[0],'bold'),"\t\t\t***0000000********0000000******\n";
+    print color($_[0],'bold'),"\t\t\t***0      0*******0      0*****\n";
+    print color($_[0],'bold'),"\t\t\t***000000/.*******0000000/*****\n";
+    print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
+    print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
+    print color($_[0],'bold'),"\t\t\t*******************************\n";
+    print color($_[0],'bold'),"\t\t\t***Neutrino2211****************\n";
+    print color($_[0],'bold'),"\t\t\t*****Network Protection********\n";
+    print color($_[0],'bold'),"\t\t\t*******************************\n";
+    print "\n\n\n";
+    say "\t\t\tArp tools by neutrino2211\n\n".color("reset");
+}
 
 sub oui {
     my $device_manufacturer = "Unknown manufacturer";
@@ -55,14 +80,15 @@ sub syn_packets {
     my $eth_obj = NetPacket::Ethernet->decode($packet);
     my $eth_type = $eth_obj->{'type'};
     my $arp_obj = NetPacket::ARP->decode($eth_obj->{data}, $eth_obj);
-    my $source_addr = $arp_obj->{'sha'};
-    my $dest_addr = $arp_obj->{'tha'};
+    my $source_addr = $arp_obj->{'spa'};
+    my $dest_addr = $arp_obj->{'tpa'};
 
     my $src_mac = $eth_obj->{'src_mac'};
-    #Uncomment following lines for increased verbosity
-    # print "x=$eth_type dest=$dest_addr src=$src_mac\n";
-    # print("source hw addr=" . $source_addr . ", " . "dest hw addr=" . $dest_addr . "\n");
-    if($dest_addr eq $ARGV[1]){
+    print "x=$eth_type dest=$dest_addr src=$src_mac\n" if exists $opts{'v'} || exists $opts{'V'};
+    if ( exists $opts{'V'} && $eth_obj->{data} =~ /$opts{'V'}/i && exists $attackers{$src_mac} && $attackers{$src_mac} > 5){
+        print $eth_obj->{data} ."\n";
+    }
+    if($dest_addr eq $opts{'c'}){
         if( exists $attackers{$src_mac}){
             if(time ge $time){
                 $attackers{$src_mac} = 0;
@@ -103,7 +129,21 @@ sub start_on_iface {
     Net::Pcap::close($WiFiobject);
 }
 
-if ($ARGV[0] eq "all"){
+sub usage {
+    print "Usage: ArpAntispoof.pl -i <interface(s)> -c <mac_to_protect>\n".
+        "\n\t-i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces".
+        "\n\t-c : Mac address of device to protect without ':' e.g 909090909090".
+        "\n\t-v : Show packet metadata".
+        "\n\t-V : Show packet metadata and data with optional filter";
+}
+
+intro("blue");
+if (! exists $opts{'c'}){
+    usage();
+    exit();
+}
+
+if (exists $opts{'i'} && $opts{'i'} eq "all"){
     foreach my $iface ( $sock->if_list ) {
         if($iface ne "lo"){
             # Async->new(\&start_on_iface($iface));
@@ -112,6 +152,10 @@ if ($ARGV[0] eq "all"){
         }
     }
     sleep();
+} elsif(exists $opts{'h'}){
+    usage();
+} elsif (exists $opts{'i'}) {
+    start_on_iface($opts{'i'});
 } else {
-    start_on_iface($ARGV[0]);
+    usage();
 }
