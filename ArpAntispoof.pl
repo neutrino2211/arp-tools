@@ -61,6 +61,20 @@ sub oui {
     return $device_manufacturer;
 }
 
+sub mac_parse2 {
+    my @str_list = split ":",$_[0];
+    my $str = "";
+    foreach my $char (@str_list) {
+        if(length $char == 1){
+            $str .= "0".$char;
+        } else {
+            $str .= $char;
+        }
+        $str .= ":";
+    }
+    return substr $str,0,17;
+}
+
 sub mac_parse {
     my @str_list = split //,$_[0];
     my $index = 0;
@@ -88,7 +102,9 @@ sub syn_packets {
     if ( exists $opts{'V'} && $eth_obj->{data} =~ /$opts{'V'}/i && exists $attackers{$src_mac} && $attackers{$src_mac} > 5){
         print $eth_obj->{data} ."\n";
     }
-    if($dest_addr eq $opts{'c'}){
+    my $protected_address = mac_parse2($opts{'c'}) =~ s/://rg;
+    # print $protected_address."\n";
+    if($dest_addr eq $protected_address){
         if( exists $attackers{$src_mac}){
             if(time ge $time){
                 $attackers{$src_mac} = 0;
@@ -133,7 +149,7 @@ sub start_on_iface {
 sub usage {
     print "Usage: ArpAntispoof.pl -i <interface(s)> -c <mac_to_protect>\n".
         "\n\t-i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces".
-        "\n\t-c : Mac address of device to protect without ':' e.g 909090909090".
+        "\n\t-c : Mac address of device to protect e.g 90:90:90:90:90:90".
         "\n\t-v : Show packet metadata".
         "\n\t-V : Show packet metadata and data with optional filter\n";
 }
