@@ -104,7 +104,7 @@ sub syn_packets {
     }
     my $protected_address = mac_parse2($opts{'c'}) =~ s/://rg;
     # print $protected_address."\n";
-    if($dest_addr eq $protected_address){
+    if($dest_addr eq lc($protected_address) || $dest_addr eq "000000000000"){
         if( exists $attackers{$src_mac}){
             if(time ge $time){
                 $attackers{$src_mac} = 0;
