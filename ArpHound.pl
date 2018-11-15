@@ -30,7 +30,7 @@ sub intro{
     print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
     print color($_[0],'bold'),"\t\t\t***Neutrino2211****************\n";
-    print color($_[0],'bold'),"\t\t\t*****Information Gathering*****\n";
+    print color($_[0],'bold'),"\t\t\t*****Network Enumeration*******\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
     print "\n\n\n";
     say "\t\t\tArp tools by neutrino2211\n\n\n";

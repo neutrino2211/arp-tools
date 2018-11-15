@@ -22,7 +22,7 @@ arpspoof -i wlan0 -t <your-gateway> <your-ip>
 then
 
 ```bash
-perl ArpAntispoof.pl -i <interface> -c 
+perl ArpAntispoof.pl -i <interface> -c <mac_to_protect>
 ```
 
 ## ArpHound.pl
@@ -37,4 +37,23 @@ Usage: ArpHound.pl
 
 ```bash
 perl ArpHound.pl
+```
+
+## ArpSpy.pl
+
+### Usage
+
+```bash
+Usage: ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>
+
+        -i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces
+        -m : Mac address of device to eavesdrop on e.g 90:90:90:90:90:90
+        -d : Regex of data to log
+        -o : File to output data
+```
+
+### To test it run
+
+```bash
+ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>
 ```

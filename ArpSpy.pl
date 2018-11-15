@@ -1,7 +1,6 @@
 #!/usr/bin/perl 
 
 use feature "say";
-use strict;
 use warnings;
 use Proc::Forkfunc;
 use Data::Dumper;
@@ -19,11 +18,9 @@ use Getopt::Std;
 
 our %opts;
 our $err;
-our %attackers;
-our $time = time + 30;
 our $sock = IO::Socket::INET->new( 'Proto' => 'tcp' );
-
-getopts("i:c:h:v:V",\%opts);
+our $OUTPUT = '';
+getopts("i:m:h:d:o:D",\%opts);
 
 sub intro{
     print color($_[0],'bold'),"\t\t\t*******************************\n";
@@ -39,7 +36,7 @@ sub intro{
     print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
     print color($_[0],'bold'),"\t\t\t***Neutrino2211****************\n";
-    print color($_[0],'bold'),"\t\t\t*****Network Protection********\n";
+    print color($_[0],'bold'),"\t\t\t*****Information Gathering*****\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
     print "\n\n\n";
     say "\t\t\tArp tools by neutrino2211\n\n".color("reset");
@@ -89,6 +86,16 @@ sub mac_parse {
     return $str;
 }
 
+sub debug {
+    if(exists $opts{'D'}){
+        print @_;
+    }
+}
+
+sub end {
+    print "Done\n";
+}
+
 sub syn_packets {
     my ( $user_data, $header, $packet ) = @_;
     my $eth_obj = NetPacket::Ethernet->decode($packet);
@@ -96,29 +103,20 @@ sub syn_packets {
     my $arp_obj = NetPacket::ARP->decode($eth_obj->{data}, $eth_obj);
     my $source_addr = $arp_obj->{'sha'};
     my $dest_addr = $arp_obj->{'tha'};
-
     my $src_mac = $eth_obj->{'src_mac'};
-    print "x=$eth_type dest=$dest_addr src=$src_mac\n" if exists $opts{'v'} || exists $opts{'V'};
-    if ( exists $opts{'V'} && $eth_obj->{data} =~ /$opts{'V'}/i && exists $attackers{$src_mac} && $attackers{$src_mac} > 5){
-        print $eth_obj->{data} ."\n";
+    my $dest_mac = $eth_obj->{'dest_mac'};
+    my $parsed_mac = mac_parse2($src_mac);
+    if (exists $opts{'o'}){
+        open(my $file,">>",$opts{'o'}) || die "Can't open $opts{'o'}";
+        say $file "$src_mac -> $dest_mac\n";
+        close $file;
     }
-    my $protected_address = mac_parse2($opts{'c'}) =~ s/://rg;
-    # print $protected_address."\n";
-    if($dest_addr eq lc($protected_address) || $dest_addr eq "000000000000"){
-        if( exists $attackers{$src_mac}){
-            if(time ge $time){
-                $attackers{$src_mac} = 0;
-                $time = time + 30;
-            } elsif($attackers{$src_mac} eq 10){
-                my $parsed_mac = mac_parse($src_mac);
-                my $substr = substr $parsed_mac,0,8;
-                my $man = oui($substr);
-                print("Attacker identified ($parsed_mac) [$man]\n")
-            } else {
-                $attackers{$src_mac} += 1;
-            }
-        } else {
-            $attackers{$src_mac} = 1;
+    debug(lc(mac_parse($src_mac))," - ",lc($opts{'m'})," - ",lc(mac_parse($dest_mac))."\n");
+    if(lc(mac_parse($src_mac)) eq lc($opts{'m'}) || lc(mac_parse($dest_mac)) eq lc($opts{'m'})){
+        if(exists $opts{'d'} && $eth_obj->{data} =~ /$opts{'d'}/i){
+            print STDOUT $eth_obj->{data}."\n";
+        } elsif(! exists $opts{'d'}) {
+            print STDOUT $eth_obj->{data}."\n";
         }
     }
 }
@@ -147,15 +145,15 @@ sub start_on_iface {
 }
 
 sub usage {
-    print "Usage: ArpAntispoof.pl -i <interface(s)> -c <mac_to_protect>\n".
+    print "Usage: ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>\n".
         "\n\t-i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces".
-        "\n\t-c : Mac address of device to protect e.g 90:90:90:90:90:90".
-        "\n\t-v : Show packet metadata".
-        "\n\t-V : Show packet metadata and data with optional filter\n";
+        "\n\t-m : Mac address of device to eavesdrop on e.g 90:90:90:90:90:90".
+        "\n\t-d : Regex of data to log".
+        "\n\t-o : File to output data\n";
 }
 
-intro("blue");
-if (! exists $opts{'c'}){
+intro("green");
+if (! exists $opts{'m'}){
     usage();
     exit();
 }
@@ -168,6 +166,7 @@ if (exists $opts{'i'} && $opts{'i'} eq "all"){
             forkfunc(\&start_on_iface,$iface);
         }
     }
+    $SIG{INT} = \&end;
     sleep();
 } elsif(exists $opts{'h'}){
     usage();
