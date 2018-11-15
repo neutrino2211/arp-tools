@@ -29,6 +29,9 @@ sub intro{
     print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
     print color($_[0],'bold'),"\t\t\t***0      0*******0************\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
+    print color($_[0],'bold'),"\t\t\t***Arming script-kiddies*******\n";
+    print color($_[0],'bold'),"\t\t\t**********Since 2018***********\n";
+    print color($_[0],'bold'),"\t\t\t*******************************\n";
     print color($_[0],'bold'),"\t\t\t***Neutrino2211****************\n";
     print color($_[0],'bold'),"\t\t\t*****Network Enumeration*******\n";
     print color($_[0],'bold'),"\t\t\t*******************************\n";
