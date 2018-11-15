@@ -44,7 +44,7 @@ perl ArpHound.pl
 ### Usage
 
 ```bash
-Usage: ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>
+Usage: ArpSpy.pl -i <interface(s)> -m <mac_to_attack>
 
         -i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces
         -m : Mac address of device to eavesdrop on e.g 90:90:90:90:90:90
@@ -55,5 +55,5 @@ Usage: ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>
 ### To test it run
 
 ```bash
-ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>
+ArpSpy.pl -i <interface(s)> -m <mac_to_attack>
 ```

@@ -145,7 +145,7 @@ sub start_on_iface {
 }
 
 sub usage {
-    print "Usage: ArpAntispoof.pl -i <interface(s)> -m <mac_to_attack>\n".
+    print "Usage: ArpSpy.pl -i <interface(s)> -m <mac_to_attack>\n".
         "\n\t-i : Listen on specific network interface e.g wlan0. Or 'all' to listen on all interfaces".
         "\n\t-m : Mac address of device to eavesdrop on e.g 90:90:90:90:90:90".
         "\n\t-d : Regex of data to log".
